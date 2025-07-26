@@ -1,4 +1,6 @@
-FROM ruby:3.4.5-bullseye
+ARG RUBY_VERSION="3.4.5"
+
+FROM ruby:${RUBY_VERSION}-bullseye
 
 WORKDIR /box
 
@@ -25,4 +27,3 @@ RUN chmod +x install-node-npm-yarn.sh && ./install-node-npm-yarn.sh
 RUN gem update --system && \
     gem install bundler && \
     gem install rails
-
