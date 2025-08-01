@@ -51,13 +51,13 @@ To get into the container:
 podman exec -it <name of container> /bin/bash
 ```
 You can then run the following to make sure you can see something like:
+
 ```shell
 psql -U <POSTGRES_USER_NAME>
 # and you should see:
 psql (17.5 (Debian 17.5-1.pgdg120+1))
 Type "help" for help.
 ```
-
 
 ### Create the Rails App and Database
 (_Note, if you want to use Sqlite or MySql, you'll likely have to change the dependencies in the `Gemfile`_)
@@ -68,12 +68,13 @@ Before you run `rails new…`, research the full range of defaults you might wan
 ```
 Run the following command, making sure the app name matches the variable in `vars.sh`:
 ```shell
-rails new <RAILS_APP_NAME> -d postgresql (plus other options)
+rails new <$RAILS_APP_NAME> -d postgresql (plus other options)
 ```
 
-If  `rails new` was successful, let's proceed!
+If `rails new` was successful, let's proceed!
 
 Once your Rails app is created, you'll need to edit the `config/database.yml` file in the `development` and `test` sections. You'll be doing this from _within_ the container, which is why `vim` and `nano` are included. Use the values from `vars.sh`, not the variable names; the variable names are only for reference:
+<!-- I'd love to automate this below, with some sort of "search and uncomment" and "add lines after" for the development and test portions of this --> 
 ```yaml
 username: $RAILS_APP_NAME
 password: $POSTGRES_PASSWORD
@@ -87,7 +88,7 @@ rails db:create
 
 If that succeeds, run:
 ```bash
-rails server
+rails server -b 0.0.0.0
 ```
 
 ### Updating Our Image to Save the App:

@@ -1,10 +1,11 @@
-ARG RUBY_VERSION="3.4.5"
+# You should pass this in from vars.sh instead.
+ARG RUBY_VERSION
 
 FROM ruby:${RUBY_VERSION}-bullseye
 
 WORKDIR /box
 
-COPY install-node-npm-yarn.sh .
+COPY setup-scripts/install-node-npm-yarn.sh .
 
 RUN echo "Installing dependencies that Rails will need…" && \
     apt update && \
@@ -27,3 +28,5 @@ RUN chmod +x install-node-npm-yarn.sh && ./install-node-npm-yarn.sh
 RUN gem update --system && \
     gem install bundler && \
     gem install rails
+
+# Consider: This is where we can copy Neovim/Lazy vim files into the container, any dependencies that it needs, and ensure this container is ready to go with LazyVim
