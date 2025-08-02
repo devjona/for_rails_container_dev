@@ -37,10 +37,16 @@ setup-scripts/podman-setup-debian-rails-image.sh
 ```
 The resulting image will have the necessary dependencies, ruby, the bundler and the rails gems installed.
 
+### Set up the Podman network with:
+
+```shell
+setup-scripts/podman-setup-network.sh
+```
+
 ### Build Postgres Image and Confirm it is Ready
 This will run your db for the first time; if you don't have the `postgres:latest` image, it will pull it.
 ```bash
-./podman-db-setup
+./podman-setup-db
 ``` 
 To see if your db is accepting connections:
 ```bash
@@ -64,7 +70,7 @@ Type "help" for help.
 
 Before you run `rails new…`, research the full range of defaults you might want (CSS, API-only mode, etc.) Once you're ready, you can enter the Rails container with:
 ```shell
-./podman-rails-setup.sh
+./podman-setup-rails.sh
 ```
 Run the following command, making sure the app name matches the variable in `vars.sh`:
 ```shell
