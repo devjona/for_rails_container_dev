@@ -2,6 +2,10 @@
 # https://solargraph.org/guides/language-server - runs on 7658 by default.
 # --- These are for local development ONLY!
 
+# --- OS
+DEBIAN_RELEASE=bookworm
+# ---
+
 # Ruby and Rails
 RAILS_APP_NAME=rails_setup
 RAILS_VERSION="8.0.2"
@@ -16,13 +20,13 @@ PORT_RAILS=3000
 # ---
 
 # Postgres
+# This is the name of the linux user for the container, NOT the postgres db user.
+# I think it's a default for postgres images.
 POSTGRES_CONTAINER_USERNAME=postgres
 
-# This should be $RAILS_APP_NAME_development since that's the default;
-# Then the user will only have to uncomment it.
-POSTGRES_HOST_FOR_RAILS_CONFIG_DB=${RAILS_APP_NAME}_development
+POSTGRES_HOST_FOR_RAILS_CONFIG_DB=${RAILS_APP_NAME}_devtest_db
 POSTGRES_PASSWORD=password
 
 # Is set to the name of your app by default. If you change it, make sure you update your config/database.yaml
-POSTGRES_USER_NAME=$RAILS_APP_NAME
+POSTGRES_USER_NAME=${RAILS_APP_NAME}
 # ---

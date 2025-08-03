@@ -3,8 +3,8 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 
 #1. Check if the network exists; if not, create it
-if ! podman network exists "$NETWORK"; then
-    podman network create "$NETWORK"
+if ! podman network exists ${NETWORK"; then
+    podman network create ${NETWORK"
     echo "Pod '$NETWORK' created."
 else
     echo "Pod '$NETWORK' already exists."
@@ -12,8 +12,8 @@ fi
 
 # 2. Start postgres:latest in the network
 podman run -d --rm \
-    --network "$NETWORK" \
-    -p "$PORT_POSTGRES" \
+    --network ${NETWORK} \
+    -p ${PORT_POSTGRES} \
     -e POSTGRES_PASSWORD=password \
     -e POSTGRES_USER=postgres \
     --name db \
@@ -29,16 +29,16 @@ echo "PostgreSQL is ready."
 
 # 4. Start the alpine ruby service in the pod as well
 podman run -it --rm \
-    --network "$NETWORK" \
-    -p "$PORT_RAILS":"$PORT_RAILS" \
-    # -v "$(pwd)":/app/:z \
+    --network ${NETWORK} \
+    -p ${PORT_RAILS":${PORT_RAILS} \
+    # -v ${(pwd)":/app/:z \
     # -e DB_NAME=postgres \
     # -e DB_HOST=db \
     # -e DB_USER=postgres \
     # -e DB_PASSWORD=passy \
-    # -e DB_PORT="$PORT_POSTGRES" \
+    # -e DB_PORT=${PORT_POSTGRES} \
     --name rails_server \
-    ruby:"$RUBY_VERSION"-bullseye \
+    ruby:${RUBY_VERSION"-bullseye \
     /bin/bash -c "rails server.rb -o 0.0.0.0"
 
 # Stop the PostgreSQL container after the Ruby server exits

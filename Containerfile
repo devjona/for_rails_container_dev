@@ -1,11 +1,16 @@
 # You should pass this in from vars.sh instead.
 ARG RUBY_VERSION
 
-FROM ruby:${RUBY_VERSION}-bullseye
+# 'bookworm' is Debian 12, https://www.debian.org/releases/bookworm/
+ARG DEBIAN_RELEASE
+
+FROM ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}
 
 WORKDIR /box
 
 COPY setup-scripts/install-node-npm-yarn.sh .
+COPY setup-scripts/install-nvim-lazy.sh .
+# COPY <lazyvim config files>
 
 RUN echo "Installing dependencies that Rails will need…" && \
     apt update && \
@@ -20,9 +25,12 @@ RUN echo "Installing dependencies that Rails will need…" && \
     vim \
     nano \
     pkg-config \
-    postgresql-client 
+    postgresql-client \
+    fzf
 
 RUN chmod +x install-node-npm-yarn.sh && ./install-node-npm-yarn.sh
+
+RUN chmod +x install-nvim-lazy.sh && ./install-nvim-lazy.sh
 
 # Update gem system
 RUN gem update --system && \

@@ -31,11 +31,11 @@ You can run scripts like this:
 ./name-of-script.sh
 ```
 
-### Choose Variables
+### 1. Choose Variables
 
 Before you run, take a look at `setup-scripts.vars.sh`; most of the variables in there should stay put (unless you have a very good reason for changing the standards). You should definitely update the `$RAILS_APP_NAME` and `$NETWORK` to the name you desire for your future Rails app.
 
-### Build The Rails Image
+### 2. Build The Rails Image
 
 Build the image with
 
@@ -45,13 +45,13 @@ setup-scripts/podman-setup-debian-rails-image.sh
 
 The resulting image will have the necessary dependencies, ruby, the bundler and the rails gems installed.
 
-### Set up the Podman network with
+### 3. Set up the Podman network with
 
 ```shell
 setup-scripts/podman-setup-network.sh
 ```
 
-### Build Postgres Image and Confirm it is Ready
+### 4. Build Postgres Image and Confirm it is Ready
 
 This will run your db for the first time; if you don't have the `postgres:latest` image, it will pull it.
 
@@ -80,7 +80,7 @@ psql (17.5 (Debian 17.5-1.pgdg120+1))
 Type "help" for help.
 ```
 
-### Create the Rails App and Database
+### 5. Create the Rails App and Database
 
 (*Note, if you want to use Sqlite or MySql, you'll likely have to change the dependencies in the `Gemfile`*)
 
@@ -117,7 +117,7 @@ If that succeeds, run:
 rails server -b 0.0.0.0
 ```
 
-### Updating Our Image to Save the App
+### 6. Updating Our Image to Save the App
 
 We have an entire Rails app structure that wasn't a part of the original build (Containerfile and scripts); in order to save this, we have a few options, both of which are great ideas and highly recommended
 
