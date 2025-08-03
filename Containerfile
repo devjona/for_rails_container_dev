@@ -10,7 +10,9 @@ WORKDIR /box
 
 COPY setup-scripts/install-node-npm-yarn.sh .
 COPY setup-scripts/install-nvim-lazy.sh .
-# COPY <lazyvim config files>
+
+RUN mkdir -p /root/.config/
+COPY nvim /root/.config/nvim
 
 RUN echo "Installing dependencies that Rails will need…" && \
     apt update && \
