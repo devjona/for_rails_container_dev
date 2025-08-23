@@ -29,4 +29,6 @@ POSTGRES_PASSWORD=password
 
 # Is set to the name of your app by default. If you change it, make sure you update your config/database.yaml
 POSTGRES_USER_NAME=${RAILS_APP_NAME}
+
+POSTGRES_VOLUME=${RAILS_APP_NAME}_volume
 # ---
