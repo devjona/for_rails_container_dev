@@ -19,15 +19,16 @@ All scripts live in `setup-scripts/` and must be run from that directory. `sourc
 ## Key architectural decisions
 
 - **Setup flow** (`podman-new-rails-app.sh` → `podman-setup-rails.sh` → `rails-new-entrypoint.sh`):
-  1. `podman create` defines the container with env vars and sets `rails-new-entrypoint.sh` as its command
+  1. `podman create` defines the container with `rails-new-entrypoint.sh` as its command
   2. `podman cp` copies the entrypoint script into the stopped container
-  3. `podman start -ai` starts the container interactively — this is where the user runs `rails new`
-  4. After the user exits, the entrypoint auto-patches `database.yml` and runs `rails db:create`
-  5. Back on the host, `podman commit` snapshots the container (with the full Rails app) into `${RAILS_APP_IMAGE_NAME}`
-  6. A persistent dev container (`${DEV_CONTAINER_NAME}`) is created from that image using `sleep infinity` to stay alive
-  7. All subsequent dev work is done via `podman exec` into the dev container
+  3. `podman start -ai` starts the container interactively — the entrypoint prints a welcome banner then hands off via `exec /bin/bash`; this is where the user runs `rails new`
+  4. After the user types `exit`, control returns to `podman-setup-rails.sh` on the host; `podman cp` extracts `database.yml` from the stopped container, `awk` patches it, and `podman cp` copies it back
+  5. `podman commit` snapshots the container (with the full Rails app and patched config) into `${RAILS_APP_IMAGE_NAME}`
+  6. `rails db:create` runs via `podman run --rm` against the committed image — no container lifecycle juggling needed
+  7. A persistent dev container (`${DEV_CONTAINER_NAME}`) is created from that image using `sleep infinity` to stay alive
+  8. All subsequent dev work is done via `podman exec` into the dev container
 
-- **`database.yml` patching**: The `awk` patch in `rails-new-entrypoint.sh` inserts `username`, `password`, `host`, and `port` into the `default: &default` section. This means all environments (development, test, and production) inherit these values. Production credentials will be handled separately in future work.
+- **`database.yml` patching**: Done in `podman-setup-rails.sh` on the host using `podman cp` + `awk`. The patch inserts `username`, `password`, `host`, and `port` into the `default: &default` section so all environments inherit the values. Production credentials will be handled separately in future work.
 
 - **Test scripts are split in two**:
   - `podman-rails-test.sh` — drops into an interactive shell in the dev container (primary use case; run individual rspec or minitest commands manually)
@@ -48,8 +49,8 @@ All scripts live in `setup-scripts/` and must be run from that directory. `sourc
 | `podman-setup-network.sh` | Creates the Podman network (idempotent) |
 | `podman-setup-volume.sh` | Creates the Postgres volume (idempotent) |
 | `podman-setup-db.sh` | Creates and starts the Postgres container (idempotent) |
-| `podman-setup-rails.sh` | Creates the Rails setup container, runs interactive session, commits image, creates dev container |
-| `rails-new-entrypoint.sh` | Runs **inside** the container only; not invoked directly from the host |
+| `podman-setup-rails.sh` | Creates the Rails setup container, runs interactive session, patches `database.yml` via `podman cp` + `awk`, runs `rails db:create`, commits image, creates dev container |
+| `rails-new-entrypoint.sh` | Runs **inside** the container only; prints a welcome banner then `exec /bin/bash` — no automation, all automation is handled by `podman-setup-rails.sh` on the host |
 | `podman-rails-server.sh` | Starts postgres + dev container, runs `rails server` |
 | `podman-rails-console.sh` | Starts postgres + dev container, opens `rails console` |
 | `podman-rails-shell.sh` | Starts postgres + dev container, drops into interactive shell for any Rails command (`rails routes`, `rails generate`, etc.) |
@@ -66,7 +67,6 @@ All scripts live in `setup-scripts/` and must be run from that directory. `sourc
 1. **Test framework decision** — RSpec vs MiniTest has not been decided. Update `podman-rails-test-suite.sh` once chosen (`bundle exec rspec` or `rails test`).
 1. **Staging/production configuration** — `database.yml` currently patches the `default` section, so production inherits dev DB credentials. Production and staging should override credentials via environment variables or Rails encrypted credentials.
 1. **Neovim / Ruby LSP** — Neovim installs but is not configured for Ruby development. Left for a future ticket.
-1. **README update** — the `README.md` Sequence section still describes the old manual multi-step flow. It should be updated to reflect that `./podman-new-rails-app.sh` is now the single entry point.
 
 # Summary
 
