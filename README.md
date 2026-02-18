@@ -1,4 +1,4 @@
-# for_rails_container_dev
+# Rails PBR (Pull, Build, Run)
 
 The building blocks that one will need to start a Rails project developed locally in Podman containers.
 
@@ -7,137 +7,112 @@ I recently purchased a Framework 13; it's my daily driver (Fedora Workstation) a
 **This assumes**:
 
 1. You don't have Ruby, Node, etc. installed on your host machine and need a Container image that installs all dependencies so that you can **PBR**:
-    - Pull
-    - Build
-    - Run (`rails new`, `rails db:create`)
+   - _Pull_ all the images you need
+   - _Build_ the containers for various services
+   - _Run_ your Rails app for local development, fully in Podman Containers
 1. You'll use PostgreSQL
 
-**Missing Components**:
+## Prerequisites
 
-1. I need script(s) for *PBR-ing* a `Postgres` image and container that the Rails app will recognize when we run `rails db:create`.
-1. Script equivalents for:
-    - `rails server`
-    - `rails console`
-    - Running tests, (whether RSpec or MiniTest)
-    - If necessary, running a separate front-end but I don't plan on using a SPA library such as React or Svelte.
-
-## Sequence
-
-These scripts are designed to make your life easier! Invoke them in the proper sequence, and you should have a perfectly functioning Rails app, containerized, ready for local development!
-
-You can run scripts like this:
+Before running any scripts for the first time, make them executable from the project root:
 
 ```shell
+chmod +x setup-scripts/*.sh dev-scripts/*.sh
+```
+
+Scripts are organised into two directories and must be run from within their respective directory:
+
+```shell
+cd setup-scripts  # for initial setup
+cd dev-scripts    # for day-to-day development
 ./name-of-script.sh
 ```
 
-### 1. Choose Variables
+## Creating a New Rails App
 
-Before you run, take a look at `setup-scripts.vars.sh`; most of the variables in there should stay put (unless you have a very good reason for changing the standards). You should definitely update the `$RAILS_APP_NAME` and `$NETWORK` to the name you desire for your future Rails app.
-
-### 2. Build The Rails Image
-
-Build the image with
-
-```bash
-setup-scripts/podman-setup-debian-rails-image.sh
-```
-
-The resulting image will have the necessary dependencies, ruby, the bundler and the rails gems installed.
-
-### 3. Set up the Podman network with
+The entire setup is orchestrated by a single script. From the `setup-scripts/` directory:
 
 ```shell
-setup-scripts/podman-setup-network.sh
+./podman-new-rails-app.sh
+```
 
-### 4. Set up the volume that postgres will use
+This will:
+
+1. Prompt you for your app name and update `vars.sh`
+2. Build the Rails image if it hasn't been built yet
+3. Set up the Podman network and volume
+4. Pull and start the Postgres container
+5. Drop you into an interactive container where you can run `rails new` with any flags you choose:
 
 ```shell
-setup-scripts/podman-setup-volume.sh 
-```
-```
-
-### 5. Build Postgres Image and Confirm it is Ready
-
-This will run your db for the first time; if you don't have the `postgres:latest` image, it will pull it.
-
-```bash
-./podman-setup-db
+rails new <your_app_name> -d postgresql [your optional flags]
 ```
 
-To see if your db is accepting connections:
+Some examples of optional flags:
 
-```bash
-podman exec -it <name of container> pg_isready
+```shell
+--css tailwind        # Tailwind CSS
+--css bootstrap       # Bootstrap
+--javascript esbuild  # esbuild bundler
+--api                 # API-only mode
 ```
 
-To get into the container:
+6. Once you type `exit`, setup continues automatically: `config/database.yml` is patched with the correct connection settings and `rails db:create` is run for you
+7. The container is committed as an image and a persistent dev container is created, ready for development
 
-```bash
-podman exec -it <name of container> /bin/bash
+## Day-to-Day Development
+
+From the `dev-scripts/` directory:
+
+```shell
+./podman-rails-server.sh     # Start 'rails server' at http://localhost:3000
+./podman-rails-console.sh    # Open 'rails console'
+./podman-rails-shell.sh      # Drop into a shell to run any Rails command (routes, generate, migrate, etc.)
+./podman-rails-test.sh       # Drop into an interactive shell to run individual tests
+./podman-rails-test-suite.sh # Run the full test suite
+./podman-dev-stop.sh         # Stop all containers cleanly when you're done
 ```
 
-You can then run the following to make sure you can see something like:
+Each script starts Postgres automatically. The dev container is started when needed (exec mode, before `podman-move-project.sh` is run).
+
+## Moving Your Project
+
+Once you're happy with your app and want to set up a git repo or move it to its own directory, from the `dev-scripts/` directory:
+
+```shell
+./podman-move-project.sh
+```
+
+This copies the Rails app from the dev container to a location of your choice on the host, along with `dev-scripts/` and `vars.sh`, so all developers on the project have everything they need. You'll be prompted for the destination path.
+
+After the move, the dev scripts switch to bind-mount mode: the project directory on the host is mounted directly into each container, so any code change you make in your editor is immediately reflected — no sync step needed.
+
+Once moved, make the scripts executable and set up version control:
+
+```shell
+cd /your/destination/path/<app_name>
+chmod +x dev-scripts/*.sh
+git init
+git add -A
+git commit -m "Initial commit"
+
+# To connect to an existing remote:
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+Any developer who clones the repo will also need to run `chmod +x dev-scripts/*.sh` before using the scripts.
+
+## Interacting with the Database Directly
+
+To open a shell inside the Postgres container, from the `dev-scripts/` directory:
+
+```shell
+./podman-interact-db.sh
+```
+
+From there you can connect with `psql`:
 
 ```shell
 psql -U <POSTGRES_USER_NAME>
-# and you should see:
-psql (17.5 (Debian 17.5-1.pgdg120+1))
-Type "help" for help.
-```
-
-### 6. Create the Rails App and Database
-
-Before you run `rails new…`, research the full range of defaults you might want (CSS, API-only mode, etc.) Once you're ready, you can enter the Rails container with:
-
-```shell
-./podman-setup-rails.sh
-```
-
-Run the following command, making sure the app name matches the variable in `vars.sh`:
-
-```shell
-rails new <$RAILS_APP_NAME> -d postgresql (plus other options)
-```
-
-If `rails new` was successful, let's proceed!
-
-Once your Rails app is created, you'll need to edit the `config/database.yml` file in the `development` and `test` sections. You'll be doing this from *within* the container, which is why `vim` and `nano`, and `nvim` are included. Use the values from `vars.sh`, not the variable names; the variable names are only for reference:
-<!-- I'd love to automate this below, with some sort of "search and uncomment" and "add lines after" for the development and test portions of this -->
-```yaml
-username: $RAILS_APP_NAME
-password: $POSTGRES_PASSWORD
-host: $POSTGRES_HOST_FOR_RAILS_CONFIG_DB
-port: 5432
-```
-
-```bash
-rails db:create
-```
-
-If that succeeds, run:
-
-```bash
-rails server -b 0.0.0.0
-```
-
-### 7. Updating Our Image to Save the App
-
-We have an entire Rails app structure that wasn't a part of the original build (Containerfile and scripts); in order to save this, we have a few options, both of which are great ideas and highly recommended
-
-1. **Commit**
-
-```bash
-# Instructions to 'commit' and update the current image.
-```
-
-1. **Copy**
-You can copy the app out of the container onto your host machine:
-
-```bash
-# to get the name of your container:
-podman ps -a
-
-# to copy:
-podman cp <container name>:/path/to/app /path/on/host/
 ```
