@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e
+
+source ./vars.sh
+
+echo ""
+echo "============================================"
+echo "  Move Rails Project to Host"
+echo "============================================"
+echo ""
+echo "This will copy '${RAILS_APP_NAME}' from the dev container"
+echo "to a directory on your host machine."
+echo ""
+
+read -p "Enter the destination directory (absolute path): " DEST_DIR
+
+if [ -z "${DEST_DIR}" ]; then
+  echo "ERROR: No destination provided."
+  exit 1
+fi
+
+if [ ! -d "${DEST_DIR}" ]; then
+  echo "ERROR: Directory '${DEST_DIR}' does not exist."
+  echo "Please create it first or choose an existing directory."
+  exit 1
+fi
+
+FULL_DEST="${DEST_DIR}/${RAILS_APP_NAME}"
+
+if [ -d "${FULL_DEST}" ]; then
+  echo ""
+  echo "WARNING: '${FULL_DEST}' already exists."
+  read -p "Overwrite? (y/N): " OVERWRITE
+  if [[ ! "${OVERWRITE}" =~ ^[Yy]$ ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+fi
+
+echo ""
+echo "Copying '${RAILS_APP_NAME}' from container to '${DEST_DIR}'..."
+podman cp "${DEV_CONTAINER_NAME}:/box/${RAILS_APP_NAME}" "${DEST_DIR}/"
+
+echo ""
+echo "Done! Your Rails app is at: ${FULL_DEST}"
+echo ""
+echo "Next steps:"
+echo "  cd ${FULL_DEST}"
+echo "  git init"
+echo "  git add -A"
+echo "  git commit -m 'Initial commit'"
+echo ""
+echo "To connect to an existing remote repository:"
+echo "  git remote add origin <your-repo-url>"
+echo "  git push -u origin main"
+echo ""
