@@ -1,4 +1,4 @@
-# for_rails_container_dev
+# Rails PBR (Pull, Build, Run)
 
 The building blocks that one will need to start a Rails project developed locally in Podman containers.
 
@@ -7,9 +7,9 @@ I recently purchased a Framework 13; it's my daily driver (Fedora Workstation) a
 **This assumes**:
 
 1. You don't have Ruby, Node, etc. installed on your host machine and need a Container image that installs all dependencies so that you can **PBR**:
-   - Pull
-   - Build
-   - Run (`rails new`, `rails db:create`)
+   - _Pull_ all the images you need
+   - _Build_ the containers for various services
+   - _Run_ your Rails app for local development, fully in Podman Containers
 1. You'll use PostgreSQL
 
 ## Prerequisites
