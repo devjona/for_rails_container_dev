@@ -17,13 +17,14 @@ I recently purchased a Framework 13; it's my daily driver (Fedora Workstation) a
 Before running any scripts for the first time, make them executable from the project root:
 
 ```shell
-chmod +x setup-scripts/*.sh
+chmod +x setup-scripts/*.sh dev-scripts/*.sh
 ```
 
-All scripts are designed to be run from within the `setup-scripts/` directory:
+Scripts are organised into two directories and must be run from within their respective directory:
 
 ```shell
-cd setup-scripts
+cd setup-scripts  # for initial setup
+cd dev-scripts    # for day-to-day development
 ./name-of-script.sh
 ```
 
@@ -61,7 +62,7 @@ Some examples of optional flags:
 
 ## Day-to-Day Development
 
-From the `setup-scripts/` directory:
+From the `dev-scripts/` directory:
 
 ```shell
 ./podman-rails-server.sh     # Start 'rails server' at http://localhost:3000
@@ -72,26 +73,25 @@ From the `setup-scripts/` directory:
 ./podman-dev-stop.sh         # Stop all containers cleanly when you're done
 ```
 
-Each script starts Postgres and the dev container automatically if they aren't already running.
-
-To restart containers that already exist (e.g. after a reboot):
-
-```shell
-./podman-run-dev.sh
-```
+Each script starts Postgres automatically. The dev container is started when needed (exec mode, before `podman-move-project.sh` is run).
 
 ## Moving Your Project
 
-Once you're happy with your app and want to set up a git repo or move it to its own directory:
+Once you're happy with your app and want to set up a git repo or move it to its own directory, from the `dev-scripts/` directory:
 
 ```shell
 ./podman-move-project.sh
 ```
 
-This copies the Rails app from the dev container to a location of your choice on the host. You'll be prompted for the destination path. Afterwards, you can initialise a git repo or connect it to an existing remote:
+This copies the Rails app from the dev container to a location of your choice on the host, along with `dev-scripts/` and `vars.sh`, so all developers on the project have everything they need. You'll be prompted for the destination path.
+
+After the move, the dev scripts switch to bind-mount mode: the project directory on the host is mounted directly into each container, so any code change you make in your editor is immediately reflected — no sync step needed.
+
+Once moved, make the scripts executable and set up version control:
 
 ```shell
 cd /your/destination/path/<app_name>
+chmod +x dev-scripts/*.sh
 git init
 git add -A
 git commit -m "Initial commit"
@@ -101,9 +101,11 @@ git remote add origin <your-repo-url>
 git push -u origin main
 ```
 
+Any developer who clones the repo will also need to run `chmod +x dev-scripts/*.sh` before using the scripts.
+
 ## Interacting with the Database Directly
 
-To open a shell inside the Postgres container:
+To open a shell inside the Postgres container, from the `dev-scripts/` directory:
 
 ```shell
 ./podman-interact-db.sh
