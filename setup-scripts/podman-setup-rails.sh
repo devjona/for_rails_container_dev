@@ -26,10 +26,6 @@ podman create \
   --net "${NETWORK}" \
   -p "${PORT_RAILS}:${PORT_RAILS}" \
   -e "RAILS_APP_NAME=${RAILS_APP_NAME}" \
-  -e "POSTGRES_USER_NAME=${POSTGRES_USER_NAME}" \
-  -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" \
-  -e "POSTGRES_HOST_FOR_RAILS_CONFIG_DB=${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" \
-  -e "PORT_POSTGRES=${PORT_POSTGRES}" \
   "${RAILS_CONTAINER_TAG}" \
   bash /box/rails-new-entrypoint.sh
 
@@ -41,8 +37,58 @@ echo ""
 echo "Starting interactive session — follow the instructions inside the container."
 echo ""
 
-# Start the container; this blocks until the entrypoint script finishes
+# Start the container interactively. Blocks until the user types 'exit'.
+# The entrypoint script prints instructions then hands off to bash via exec,
+# so exiting bash exits the container cleanly with no continuation attempted.
 podman start -ai "${RAILS_APP_NAME}"
+
+echo ""
+echo "--------------------------------------------"
+echo "  Checking for Rails app..."
+echo "--------------------------------------------"
+
+TEMP_YAML=$(mktemp)
+
+# Verify the app was created by checking for database.yml
+if ! podman cp "${RAILS_APP_NAME}:/box/${RAILS_APP_NAME}/config/database.yml" "${TEMP_YAML}" 2>/dev/null; then
+  echo ""
+  echo "ERROR: Could not find '${RAILS_APP_NAME}/config/database.yml' in the container."
+  echo "Did you run 'rails new ${RAILS_APP_NAME} -d postgresql ...' before typing 'exit'?"
+  rm -f "${TEMP_YAML}"
+  exit 1
+fi
+
+echo "Rails app found."
+echo ""
+echo "--------------------------------------------"
+echo "  Patching config/database.yml"
+echo "--------------------------------------------"
+echo "Adding connection settings for:"
+echo "  username: ${POSTGRES_USER_NAME}"
+echo "  host:     ${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}"
+echo "  port:     ${PORT_POSTGRES}"
+echo ""
+
+# Patch the default section so all environments inherit the connection settings
+awk \
+  -v user="${POSTGRES_USER_NAME}" \
+  -v pass="${POSTGRES_PASSWORD}" \
+  -v host="${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" \
+  -v port="${PORT_POSTGRES}" \
+  '/pool: <%= ENV.fetch/ {
+    print;
+    print "  username: " user;
+    print "  password: " pass;
+    print "  host: " host;
+    print "  port: " port;
+    next
+  }1' "${TEMP_YAML}" > "${TEMP_YAML}.patched" \
+  && mv "${TEMP_YAML}.patched" "${TEMP_YAML}"
+
+# Copy the patched file back into the stopped container
+podman cp "${TEMP_YAML}" "${RAILS_APP_NAME}:/box/${RAILS_APP_NAME}/config/database.yml"
+rm -f "${TEMP_YAML}"
+echo "config/database.yml patched successfully."
 
 echo ""
 echo "--------------------------------------------"
@@ -51,12 +97,23 @@ echo "--------------------------------------------"
 podman commit "${RAILS_APP_NAME}" "${RAILS_APP_IMAGE_NAME}"
 echo "Image '${RAILS_APP_IMAGE_NAME}' created."
 
-# Guard: don't create a second dev container if one already exists
+echo ""
+echo "--------------------------------------------"
+echo "  Running rails db:create"
+echo "--------------------------------------------"
+podman run --rm \
+  --net "${NETWORK}" \
+  "${RAILS_APP_IMAGE_NAME}" \
+  bash -c "cd /box/${RAILS_APP_NAME} && rails db:create"
+
+echo ""
+echo "--------------------------------------------"
+echo "  Creating persistent dev container"
+echo "--------------------------------------------"
+
 if podman container exists "${DEV_CONTAINER_NAME}"; then
   echo "Dev container '${DEV_CONTAINER_NAME}' already exists; skipping creation."
 else
-  echo ""
-  echo "Creating persistent dev container '${DEV_CONTAINER_NAME}'..."
   podman run -d \
     --name "${DEV_CONTAINER_NAME}" \
     --net "${NETWORK}" \
@@ -76,6 +133,6 @@ echo ""
 echo "Next steps:"
 echo "  ./podman-rails-server.sh  — Start 'rails server'"
 echo "  ./podman-rails-console.sh — Open 'rails console'"
-echo "  ./podman-rails-test.sh    — Run your tests"
+echo "  ./podman-rails-shell.sh   — Open a shell for any Rails command"
 echo "  ./podman-move-project.sh  — Copy project to your host machine"
 echo ""
