@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+source ../vars.sh
 
 echo ""
 echo "============================================"
@@ -12,7 +12,10 @@ echo "This will copy '${RAILS_APP_NAME}' from the dev container"
 echo "to a directory on your host machine."
 echo ""
 
-read -p "Enter the destination directory (absolute path): " DEST_DIR
+read -p "Enter the destination directory (e.g. ~/Projects or /home/user/Projects): " DEST_DIR
+
+# Expand a leading ~ to the actual home directory
+DEST_DIR="${DEST_DIR/#\~/$HOME}"
 
 if [ -z "${DEST_DIR}" ]; then
   echo "ERROR: No destination provided."
@@ -41,10 +44,25 @@ echo ""
 echo "Copying '${RAILS_APP_NAME}' from container to '${DEST_DIR}'..."
 podman cp "${DEV_CONTAINER_NAME}:/box/${RAILS_APP_NAME}" "${DEST_DIR}/"
 
+echo "Copying dev-scripts to '${FULL_DEST}/dev-scripts'..."
+cp -r . "${FULL_DEST}/dev-scripts"
+
+echo "Copying vars.sh to '${FULL_DEST}/vars.sh'..."
+cp ../vars.sh "${FULL_DEST}/vars.sh"
+
+echo "Enabling bind mount in destination vars.sh..."
+sed -i "s|^BIND_MOUNT=.*|BIND_MOUNT=true|" "${FULL_DEST}/vars.sh"
+
 echo ""
 echo "Done! Your Rails app is at: ${FULL_DEST}"
 echo ""
-echo "Next steps:"
+echo "The dev-scripts and vars.sh have been included so all developers"
+echo "can use them after cloning the repo. Run them from dev-scripts/:"
+echo ""
+echo "  cd ${FULL_DEST}/dev-scripts"
+echo "  ./podman-rails-server.sh"
+echo ""
+echo "To set up version control:"
 echo "  cd ${FULL_DEST}"
 echo "  git init"
 echo "  git add -A"
