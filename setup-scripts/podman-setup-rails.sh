@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+source ../vars.sh
 
 echo ""
 echo "============================================"
@@ -75,15 +75,15 @@ awk \
   -v pass="${POSTGRES_PASSWORD}" \
   -v host="${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" \
   -v port="${PORT_POSTGRES}" \
-  '/pool: <%= ENV.fetch/ {
+  '/pool:/ {
     print;
     print "  username: " user;
     print "  password: " pass;
     print "  host: " host;
     print "  port: " port;
     next
-  }1' "${TEMP_YAML}" > "${TEMP_YAML}.patched" \
-  && mv "${TEMP_YAML}.patched" "${TEMP_YAML}"
+  }1' "${TEMP_YAML}" >"${TEMP_YAML}.patched" &&
+  mv "${TEMP_YAML}.patched" "${TEMP_YAML}"
 
 # Copy the patched file back into the stopped container
 podman cp "${TEMP_YAML}" "${RAILS_APP_NAME}:/box/${RAILS_APP_NAME}/config/database.yml"

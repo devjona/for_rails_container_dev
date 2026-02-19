@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+source ../vars.sh
 
 echo "Checking for volume: ${POSTGRES_VOLUME}…"
 

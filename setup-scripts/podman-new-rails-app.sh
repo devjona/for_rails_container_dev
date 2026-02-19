@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+source ../vars.sh
 
 echo ""
 echo "============================================"
@@ -21,9 +21,9 @@ if [ -n "${INPUT_NAME}" ]; then
     echo "ERROR: App name must start with a letter and contain only letters, numbers, and underscores."
     exit 1
   fi
-  sed -i "s/^RAILS_APP_NAME=.*/RAILS_APP_NAME=${INPUT_NAME}/" ./vars.sh
+  sed -i "s/^RAILS_APP_NAME=.*/RAILS_APP_NAME=${INPUT_NAME}/" ../vars.sh
   # Re-source so all derived variables (NETWORK, POSTGRES_VOLUME, etc.) update
-  source ./vars.sh
+  source ../vars.sh
   echo "Updated RAILS_APP_NAME to '${RAILS_APP_NAME}' in vars.sh."
 fi
 

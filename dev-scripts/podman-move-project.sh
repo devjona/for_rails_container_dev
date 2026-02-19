@@ -47,8 +47,17 @@ podman cp "${DEV_CONTAINER_NAME}:/box/${RAILS_APP_NAME}" "${DEST_DIR}/"
 echo "Copying dev-scripts to '${FULL_DEST}/dev-scripts'..."
 cp -r . "${FULL_DEST}/dev-scripts"
 
+echo "Copying Rails PBR README to '${FULL_DEST}/dev-scripts/README.md'..."
+cp ../README.md "${FULL_DEST}/dev-scripts/README.md"
+
+echo "Adding Rails PBR note to '${FULL_DEST}/README.md'..."
+{ printf '> **Note:** This app was built with [Rails PBR](https://github.com/devjona/rails_pbr). See `dev-scripts/README.md` for information on running this app with Podman containers.\n\n'; cat "${FULL_DEST}/README.md"; } > /tmp/rails_pbr_readme_tmp && mv /tmp/rails_pbr_readme_tmp "${FULL_DEST}/README.md"
+
 echo "Copying vars.sh to '${FULL_DEST}/vars.sh'..."
 cp ../vars.sh "${FULL_DEST}/vars.sh"
+
+echo "Copying the Containerfile to '${FULL_DEST}'…"
+cp ../Containerfile "${FULL_DEST}"
 
 echo "Enabling bind mount in destination vars.sh..."
 sed -i "s|^BIND_MOUNT=.*|BIND_MOUNT=true|" "${FULL_DEST}/vars.sh"
