@@ -9,7 +9,7 @@ DEBIAN_RELEASE=bookworm
 
 # Ruby and Rails
 # Update RAILS_APP_NAME to your liking!
-RAILS_APP_NAME=rails_pbr_test_2
+RAILS_APP_NAME=rails_pbr
 
 # ---
 

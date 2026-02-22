@@ -75,20 +75,32 @@ awk \
   -v pass="${POSTGRES_PASSWORD}" \
   -v host="${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" \
   -v port="${PORT_POSTGRES}" \
-  '/pool:/ {
-    print;
+  '/^development:/ {
+    print "";
+    print "  # The following lines were automatically inserted by podman-setup-rails.sh";
+    print "  # You may delete them if you are not using the Rails PBR toolkit -- a Podman tool for local Ruby on Rails development";
     print "  username: " user;
     print "  password: " pass;
     print "  host: " host;
     print "  port: " port;
+    print "  # End insertion by podman-setup-rails.sh";
+    print "";
+    print;
     next
   }1' "${TEMP_YAML}" >"${TEMP_YAML}.patched" &&
   mv "${TEMP_YAML}.patched" "${TEMP_YAML}"
 
 # Copy the patched file back into the stopped container
 podman cp "${TEMP_YAML}" "${RAILS_APP_NAME}:/box/${RAILS_APP_NAME}/config/database.yml"
+
+echo "Let's cat the temporary database.yml file to verify the changes:"
+cat "${TEMP_YAML}"
+
+echo "Deleting the temporary database.yml file…"
 rm -f "${TEMP_YAML}"
 echo "config/database.yml patched successfully."
+
+
 
 echo ""
 echo "--------------------------------------------"
