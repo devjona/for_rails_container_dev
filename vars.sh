@@ -74,7 +74,9 @@ function ensure_container_running() {
 
   if [ "${status}" = "missing" ]; then
     echo "ERROR: Container '${container}' does not exist."
-    echo "Please complete the initial setup first by running: ./podman-new-rails-app.sh"
+    echo "Please complete the initial setup first by running: ./setup-scripts/podman-new-rails-app.sh"
+    echo "If you cloned an existing Rails app that uses this tool, check the README.md for Rails PBR;"
+    echo "you might need to run ./setup-scripts/podman-setup-clone.sh"
     exit 1
   elif [ "${status}" != "running" ]; then
     echo "Starting '${container}'..."
