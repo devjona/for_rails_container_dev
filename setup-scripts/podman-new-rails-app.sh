@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 echo ""
 echo "============================================"
@@ -21,9 +22,9 @@ if [ -n "${INPUT_NAME}" ]; then
     echo "ERROR: App name must start with a letter and contain only letters, numbers, and underscores."
     exit 1
   fi
-  sed -i "s/^RAILS_APP_NAME=.*/RAILS_APP_NAME=${INPUT_NAME}/" ./vars.sh
+  sed -i "s/^RAILS_APP_NAME=.*/RAILS_APP_NAME=${INPUT_NAME}/" "${SCRIPT_DIR}/../vars.sh"
   # Re-source so all derived variables (NETWORK, POSTGRES_VOLUME, etc.) update
-  source ./vars.sh
+  source "${SCRIPT_DIR}/../vars.sh"
   echo "Updated RAILS_APP_NAME to '${RAILS_APP_NAME}' in vars.sh."
 fi
 
@@ -55,7 +56,7 @@ else
     echo "  ./podman-setup-debian-rails-image.sh"
     exit 1
   fi
-  ./podman-setup-debian-rails-image.sh
+  "${SCRIPT_DIR}/podman-setup-debian-rails-image.sh"
 fi
 
 echo ""
@@ -63,22 +64,22 @@ echo ""
 # --- Step 3: Network & volume --------------------------------
 echo "Step 3 of 5: Network & Volume"
 echo ""
-./podman-setup-network.sh
-./podman-setup-volume.sh
+"${SCRIPT_DIR}/podman-setup-network.sh"
+"${SCRIPT_DIR}/podman-setup-volume.sh"
 
 echo ""
 
 # --- Step 4: Postgres ----------------------------------------
 echo "Step 4 of 5: Postgres Database"
 echo ""
-./podman-setup-db.sh
+"${SCRIPT_DIR}/podman-setup-db.sh"
 
 echo ""
 
 # --- Step 5: Rails app ---------------------------------------
 echo "Step 5 of 5: Rails App"
 echo ""
-./podman-setup-rails.sh
+"${SCRIPT_DIR}/podman-setup-rails.sh"
 
 echo ""
 echo "============================================"

@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 echo "Checking for Postgres container: '${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}'..."
 
@@ -22,7 +23,7 @@ else
     --user "${POSTGRES_CONTAINER_USERNAME}" \
     --net "${NETWORK}" \
     -v "${POSTGRES_VOLUME}:/var/lib/postgresql/data" \
-    postgres:latest
+    postgres:17
   echo "Postgres container created."
 fi
 

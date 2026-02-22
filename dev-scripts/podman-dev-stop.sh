@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ./vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 echo ""
 echo "============================================"
@@ -9,13 +10,13 @@ echo "  Stopping Dev Environment"
 echo "============================================"
 echo ""
 
-podman stop "${DEV_CONTAINER_NAME}" 2>/dev/null \
-  && echo "'${DEV_CONTAINER_NAME}' stopped." \
-  || echo "'${DEV_CONTAINER_NAME}' was not running."
+podman stop "${DEV_CONTAINER_NAME}" 2>/dev/null &&
+  echo "'${DEV_CONTAINER_NAME}' stopped." ||
+  echo "'${DEV_CONTAINER_NAME}' was not running."
 
-podman stop "${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" 2>/dev/null \
-  && echo "'${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}' stopped." \
-  || echo "'${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}' was not running."
+podman stop "${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}" 2>/dev/null &&
+  echo "'${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}' stopped." ||
+  echo "'${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}' was not running."
 
 echo ""
 echo "Dev environment stopped."
