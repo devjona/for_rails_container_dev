@@ -69,7 +69,8 @@ echo "  host:     ${POSTGRES_HOST_FOR_RAILS_CONFIG_DB}"
 echo "  port:     ${PORT_POSTGRES}"
 echo ""
 
-# Patch the default section so all environments inherit the connection settings
+# Patch database.yml by inserting credentials just before the development: key,
+# placing them at the end of the default: &default block so all environments inherit them.
 awk \
   -v user="${POSTGRES_USER_NAME}" \
   -v pass="${POSTGRES_PASSWORD}" \

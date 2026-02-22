@@ -1,0 +1,37 @@
+# Containerfile.dev -- for use by developers cloning an existing Rails PBR project.
+# Build this from the project root so that setup-scripts/ and Gemfile are in the build context:
+#   podman build -t ${RAILS_APP_IMAGE_NAME} --build-arg RUBY_VERSION=... --build-arg DEBIAN_RELEASE=... -f Containerfile.dev .
+
+ARG RUBY_VERSION
+ARG DEBIAN_RELEASE
+
+FROM ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}
+
+WORKDIR /box
+
+COPY setup-scripts/install-node-npm-yarn.sh .
+
+RUN apt update && \
+    apt install -y --no-install-recommends \
+    build-essential \
+    curl \
+    wget \
+    graphviz \
+    imagemagick \
+    libpq-dev \
+    libvips \
+    vim \
+    nano \
+    pkg-config \
+    postgresql-client \
+    fzf
+
+RUN chmod +x install-node-npm-yarn.sh && ./install-node-npm-yarn.sh
+
+RUN gem update --system && \
+    gem install bundler && \
+    gem install rails
+
+# Install this app's dependencies
+COPY Gemfile Gemfile.lock ./
+RUN bundle install

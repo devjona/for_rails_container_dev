@@ -1,4 +1,5 @@
 # Rails PBR (Pull, Build, Run)
+
 [Project Link](https://github.com/devjona/rails_pbr)
 
 The building blocks that one will need to start a Rails project developed locally in Podman containers.
@@ -26,7 +27,7 @@ Scripts are organised into two directories and must be run from within their res
 ```shell
 cd setup-scripts  # for initial setup
 cd dev-scripts    # for day-to-day development
-./name-of-script.sh
+./name-of-script.sh # the dot-slash <filename> is how you run them.
 ```
 
 ## Creating a New Rails App
@@ -78,13 +79,13 @@ Each script starts Postgres automatically. The dev container is started when nee
 
 ## Moving Your Project
 
-Once you're happy with your app and want to set up a git repo or move it to its own directory, from the `dev-scripts/` directory:
+Once you're happy with your app and want to set up a git repo or move it to its own directory, from the `setup-scripts/` directory:
 
 ```shell
 ./podman-move-project.sh
 ```
 
-This copies the Rails app from the dev container to a location of your choice on the host, along with `dev-scripts/` and `vars.sh`, so all developers on the project have everything they need. You'll be prompted for the destination path.
+This copies the Rails app from the dev container to a location of your choice on the host, along with `dev-scripts/`, `setup-scripts/`, and `vars.sh`, so all developers on the project have everything they need. You'll be prompted for the destination path. It also copies this project's `README.md` into `dev-scripts/`.
 
 After the move, the dev scripts switch to bind-mount mode: the project directory on the host is mounted directly into each container, so any code change you make in your editor is immediately reflected — no sync step needed.
 
@@ -102,7 +103,17 @@ git remote add origin <your-repo-url>
 git push -u origin main
 ```
 
-Any developer who clones the repo will also need to run `chmod +x dev-scripts/*.sh` before using the scripts.
+Any developer who clones the repo will also need to run `chmod +x setup-scripts/*.sh dev-scripts/*.sh` before using the scripts.
+
+## Setting Up a Cloned Project
+
+If you've cloned an existing Rails PBR project and need to set up your local environment from scratch, from the `setup-scripts/` directory:
+
+```shell
+./podman-setup-clone.sh
+```
+
+This will build the Rails app image (from `Containerfile.dev`), create the Podman network and volume, and start the Postgres container. Once complete, you can use the dev scripts as normal.
 
 ## Interacting with the Database Directly
 

@@ -9,7 +9,7 @@ DEBIAN_RELEASE=bookworm
 
 # Ruby and Rails
 # Update RAILS_APP_NAME to your liking!
-RAILS_APP_NAME=rails_pbr
+RAILS_APP_NAME=y
 
 # ---
 
@@ -77,6 +77,41 @@ function ensure_container_running() {
     sleep 1
   else
     echo "'${container}' is already running."
+  fi
+}
+
+# Runs a command inside the Rails app container, handling both exec and bind-mount modes.
+# Usage: run_in_container [command] [extra_flags]
+#   command     -- shell command to run (e.g. "rails server -b 0.0.0.0"); omit to drop into bash
+#   extra_flags -- additional podman flags (e.g. "-p 3000:3000" or "-w /box/app")
+#                  applied to 'podman run' always; applied to 'podman exec' only when no command is given
+function run_in_container() {
+  local command="${1:-}"
+  local extra_flags="${2:-}"
+
+  if [ "${BIND_MOUNT}" = "true" ]; then
+    if [ -n "${command}" ]; then
+      podman run --rm -it \
+        --net "${NETWORK}" \
+        ${extra_flags} \
+        -v "$(cd .. && pwd):/box/${RAILS_APP_NAME}:z" \
+        "${RAILS_APP_IMAGE_NAME}" \
+        bash -c "cd /box/${RAILS_APP_NAME} && ${command}"
+    else
+      podman run --rm -it \
+        --net "${NETWORK}" \
+        ${extra_flags} \
+        -v "$(cd .. && pwd):/box/${RAILS_APP_NAME}:z" \
+        "${RAILS_APP_IMAGE_NAME}" \
+        bash
+    fi
+  else
+    ensure_container_running "${DEV_CONTAINER_NAME}"
+    if [ -n "${command}" ]; then
+      podman exec -it "${DEV_CONTAINER_NAME}" bash -c "cd /box/${RAILS_APP_NAME} && ${command}"
+    else
+      podman exec -it ${extra_flags} "${DEV_CONTAINER_NAME}" bash
+    fi
   fi
 }
 # ---

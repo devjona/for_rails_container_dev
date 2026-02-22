@@ -22,7 +22,7 @@ else
     --user "${POSTGRES_CONTAINER_USERNAME}" \
     --net "${NETWORK}" \
     -v "${POSTGRES_VOLUME}:/var/lib/postgresql/data" \
-    postgres:latest
+    postgres:17
   echo "Postgres container created."
 fi
 

@@ -14,7 +14,10 @@ The end goal is that after creation, the user will be able to copy the Rails pro
 
 # What Has Been Built
 
-Scripts are split into two directories. `vars.sh` lives in the project root and is sourced by all scripts as `source ../vars.sh`.
+Scripts are split into two directories. `vars.sh` lives in the project root and is sourced by all scripts as `source ../vars.sh`. Two Containerfiles also live in the project root:
+
+- `Containerfile` — used during initial setup (`rails new`) to build the base Rails image
+- `Containerfile.dev` — used by developers who clone an existing project; self-contained, includes `bundle install` so the app's gems are baked into the image
 
 - `setup-scripts/` — one-time setup; run from within this directory
 - `dev-scripts/` — day-to-day development; run from within this directory
@@ -31,7 +34,7 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
   7. A persistent dev container (`${DEV_CONTAINER_NAME}`) is created from that image using `sleep infinity` to stay alive
   8. All subsequent dev work is done via `podman exec` into the dev container
 
-- **`database.yml` patching**: Done in `podman-setup-rails.sh` on the host using `podman cp` + `awk`. The patch inserts `username`, `password`, `host`, and `port` into the `default: &default` section so all environments inherit the values. Production credentials will be handled separately in future work.
+- **`database.yml` patching**: Done in `podman-setup-rails.sh` on the host using `podman cp` + `awk`. The `awk` pattern matches `^development:` and inserts `username`, `password`, `host`, and `port` immediately before it, placing them at the end of the `default: &default` block so all environments inherit the values via the YAML anchor. Production credentials will be handled separately in future work.
 
 - **Test scripts are split in two**:
   - `podman-rails-test.sh` — drops into an interactive shell in the dev container (primary use case; run individual rspec or minitest commands manually)
@@ -45,6 +48,8 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
 
 - **`ensure_container_running()`** is a shared helper in `vars.sh`; it checks if a container exists and starts it if stopped, or exits with a clear error if it was never created. Used in exec mode only.
 
+- **`run_in_container()`** is a shared helper in `vars.sh` used by all dev scripts. It accepts a command and optional extra podman flags, and handles both exec mode (`podman exec` into the persistent dev container) and bind-mount mode (`podman run --rm` with the project mounted) transparently. Scripts no longer contain `if [ "${BIND_MOUNT}" = "true" ]` branching directly.
+
 ## Scripts reference
 
 ### `setup-scripts/`
@@ -57,6 +62,8 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
 | `podman-setup-volume.sh` | Creates the Postgres volume (idempotent) |
 | `podman-setup-db.sh` | Creates and starts the Postgres container (idempotent) |
 | `podman-setup-rails.sh` | Creates the Rails setup container, runs interactive session, patches `database.yml` via `podman cp` + `awk`, runs `rails db:create`, commits image, creates dev container |
+| `podman-setup-clone.sh` | **For cloned projects.** Builds `${RAILS_APP_IMAGE_NAME}` from `Containerfile.dev`, creates the network and volume, and starts the Postgres container — no `rails new` involved |
+| `podman-move-project.sh` | Copies the Rails app from the dev container to a host directory; sets `BIND_MOUNT=true` in the destination `vars.sh`; copies `Containerfile.dev` for use by `podman-setup-clone.sh` |
 | `rails-new-entrypoint.sh` | Runs **inside** the container only; prints a welcome banner then `exec /bin/bash` — no automation, all automation is handled by `podman-setup-rails.sh` on the host |
 
 ### `dev-scripts/`
@@ -70,7 +77,6 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
 | `podman-rails-test-suite.sh` | Starts postgres, runs the full test suite |
 | `podman-dev-stop.sh` | Stops the dev container and postgres cleanly |
 | `podman-interact-db.sh` | Opens a bash shell inside the Postgres container |
-| `podman-move-project.sh` | Copies the Rails app from the dev container to a host directory; sets `BIND_MOUNT=true` in the destination `vars.sh` |
 
 # Remaining / Future Work
 
@@ -86,6 +92,6 @@ The user only has to:
 1. `cd setup-scripts && ./podman-new-rails-app.sh` — prompted for an app name, then ushered through the full setup automatically
 1. Run `rails new` with desired flags inside the interactive container session, then `exit`
 1. `cd ../dev-scripts` and use `./podman-rails-server.sh`, `./podman-rails-console.sh`, `./podman-rails-test.sh` for day-to-day development
-1. Run `./podman-move-project.sh` to copy the project to a host directory for version control
+1. Run `./podman-move-project.sh` (from `setup-scripts/`) to copy the project to a host directory for version control
 
 Please let me know if you have any questions! I look forward to what we can accomplish.
