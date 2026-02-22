@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ../vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 echo ""
 echo "============================================"
@@ -31,7 +32,7 @@ podman create \
 
 # Copy the entrypoint script into the container before starting
 echo "Copying entrypoint script into container..."
-podman cp ./rails-new-entrypoint.sh "${RAILS_APP_NAME}:/box/rails-new-entrypoint.sh"
+podman cp "${SCRIPT_DIR}/rails-new-entrypoint.sh" "${RAILS_APP_NAME}:/box/rails-new-entrypoint.sh"
 
 echo ""
 echo "Starting interactive session — follow the instructions inside the container."

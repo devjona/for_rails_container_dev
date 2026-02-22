@@ -2,6 +2,11 @@
 # https://solargraph.org/guides/language-server - runs on 7658 by default.
 # --- These are for local development ONLY!
 
+# Resolve the rails_pbr directory (where vars.sh lives) and the Rails app project
+# root (its parent), regardless of where the calling script is run from.
+RAILS_PBR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${RAILS_PBR_DIR}/.." && pwd)"
+
 # --- OS
 DEBIAN_RELEASE=bookworm
 
@@ -9,7 +14,7 @@ DEBIAN_RELEASE=bookworm
 
 # Ruby and Rails
 # Update RAILS_APP_NAME to your liking!
-RAILS_APP_NAME=y
+RAILS_APP_NAME=
 
 # ---
 
@@ -94,14 +99,14 @@ function run_in_container() {
       podman run --rm -it \
         --net "${NETWORK}" \
         ${extra_flags} \
-        -v "$(cd .. && pwd):/box/${RAILS_APP_NAME}:z" \
+        -v "${PROJECT_ROOT}:/box/${RAILS_APP_NAME}:z" \
         "${RAILS_APP_IMAGE_NAME}" \
         bash -c "cd /box/${RAILS_APP_NAME} && ${command}"
     else
       podman run --rm -it \
         --net "${NETWORK}" \
         ${extra_flags} \
-        -v "$(cd .. && pwd):/box/${RAILS_APP_NAME}:z" \
+        -v "${PROJECT_ROOT}:/box/${RAILS_APP_NAME}:z" \
         "${RAILS_APP_IMAGE_NAME}" \
         bash
     fi

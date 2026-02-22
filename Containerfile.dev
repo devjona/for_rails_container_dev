@@ -1,6 +1,6 @@
 # Containerfile.dev -- for use by developers cloning an existing Rails PBR project.
-# Build this from the project root so that setup-scripts/ and Gemfile are in the build context:
-#   podman build -t ${RAILS_APP_IMAGE_NAME} --build-arg RUBY_VERSION=... --build-arg DEBIAN_RELEASE=... -f Containerfile.dev .
+# Build context must be the project root (where Gemfile lives), with rails_pbr/ as a subdirectory.
+# podman-setup-clone.sh handles this automatically.
 
 ARG RUBY_VERSION
 ARG DEBIAN_RELEASE
@@ -9,7 +9,7 @@ FROM ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}
 
 WORKDIR /box
 
-COPY setup-scripts/install-node-npm-yarn.sh .
+COPY rails_pbr/setup-scripts/install-node-npm-yarn.sh .
 
 RUN apt update && \
     apt install -y --no-install-recommends \

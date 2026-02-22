@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ../vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 echo ""
 echo "============================================"
@@ -40,42 +41,43 @@ if [ -d "${FULL_DEST}" ]; then
   fi
 fi
 
+RAILS_PBR_DEST="${FULL_DEST}/rails_pbr"
+
 echo ""
 echo "Copying '${RAILS_APP_NAME}' from container to '${DEST_DIR}'..."
 podman cp "${DEV_CONTAINER_NAME}:/box/${RAILS_APP_NAME}" "${DEST_DIR}/"
 
-echo "Copying dev-scripts to '${FULL_DEST}/dev-scripts'..."
-cp -r dev-scripts/ "${FULL_DEST}/dev-scripts"
+echo "Creating rails_pbr directory at '${RAILS_PBR_DEST}'..."
+mkdir -p "${RAILS_PBR_DEST}"
 
-echo "Copying setup-scripts to '${FULL_DEST}/setup-scripts'..."
-cp -r setup-scripts/ "${FULL_DEST}/setup-scripts"
+echo "Copying dev-scripts to '${RAILS_PBR_DEST}/dev-scripts'..."
+cp -r "${RAILS_PBR_DIR}/dev-scripts" "${RAILS_PBR_DEST}/dev-scripts"
 
-echo "Copying Rails PBR README to '${FULL_DEST}/dev-scripts/README.md'..."
-cp ../README.md "${FULL_DEST}/dev-scripts/README.md"
+echo "Copying setup-scripts to '${RAILS_PBR_DEST}/setup-scripts'..."
+cp -r "${RAILS_PBR_DIR}/setup-scripts" "${RAILS_PBR_DEST}/setup-scripts"
 
-echo "Adding Rails PBR note to '${FULL_DEST}/README.md'..."
-{ printf '> **Note:** This app was built with [Rails PBR](https://github.com/devjona/rails_pbr). See `dev-scripts/README.md` for information on running this app with Podman containers.\n\n'; cat "${FULL_DEST}/README.md"; } > /tmp/rails_pbr_readme_tmp && mv /tmp/rails_pbr_readme_tmp "${FULL_DEST}/README.md"
+echo "Copying vars.sh to '${RAILS_PBR_DEST}/vars.sh'..."
+cp "${RAILS_PBR_DIR}/vars.sh" "${RAILS_PBR_DEST}/vars.sh"
 
-echo "Copying vars.sh to '${FULL_DEST}/vars.sh'..."
-cp ../vars.sh "${FULL_DEST}/vars.sh"
+echo "Copying Containerfile to '${RAILS_PBR_DEST}'..."
+cp "${RAILS_PBR_DIR}/Containerfile" "${RAILS_PBR_DEST}/Containerfile"
 
-echo "Copying the Containerfile to '${FULL_DEST}'..."
-cp ../Containerfile "${FULL_DEST}"
+echo "Copying Containerfile.dev to '${RAILS_PBR_DEST}'..."
+cp "${RAILS_PBR_DIR}/Containerfile.dev" "${RAILS_PBR_DEST}/Containerfile.dev"
 
-echo "Copying Containerfile.dev to '${FULL_DEST}'..."
-cp ../Containerfile.dev "${FULL_DEST}"
+echo "Copying Rails PBR README to '${RAILS_PBR_DEST}/README.md'..."
+cp "${RAILS_PBR_DIR}/README.md" "${RAILS_PBR_DEST}/README.md"
 
 echo "Enabling bind mount in destination vars.sh..."
-sed -i "s|^BIND_MOUNT=.*|BIND_MOUNT=true|" "${FULL_DEST}/vars.sh"
+sed -i "s|^BIND_MOUNT=.*|BIND_MOUNT=true|" "${RAILS_PBR_DEST}/vars.sh"
+
+echo "Adding Rails PBR note to '${FULL_DEST}/README.md'..."
+{ printf '> **Note:** This app uses [Rails PBR](https://github.com/devjona/rails_pbr) for containerized local development.\n> To set up your environment after cloning, run `./rails_pbr/setup-scripts/podman-setup-clone.sh`.\n> Day-to-day scripts live in `./rails_pbr/dev-scripts/`.\n\n'; cat "${FULL_DEST}/README.md"; } > /tmp/rails_pbr_readme_tmp && mv /tmp/rails_pbr_readme_tmp "${FULL_DEST}/README.md"
 
 echo ""
 echo "Done! Your Rails app is at: ${FULL_DEST}"
 echo ""
-echo "The dev-scripts and vars.sh have been included so all developers"
-echo "can use them after cloning the repo. Run them from dev-scripts/:"
-echo ""
-echo "  cd ${FULL_DEST}/dev-scripts"
-echo "  ./podman-rails-server.sh"
+echo "All Rails PBR scripts are under ${RAILS_PBR_DEST}/"
 echo ""
 echo "To set up version control:"
 echo "  cd ${FULL_DEST}"
@@ -86,4 +88,7 @@ echo ""
 echo "To connect to an existing remote repository:"
 echo "  git remote add origin <your-repo-url>"
 echo "  git push -u origin main"
+echo ""
+echo "After cloning, teammates run:"
+echo "  ./rails_pbr/setup-scripts/podman-setup-clone.sh"
 echo ""

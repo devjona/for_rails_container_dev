@@ -14,13 +14,13 @@ The end goal is that after creation, the user will be able to copy the Rails pro
 
 # What Has Been Built
 
-Scripts are split into two directories. `vars.sh` lives in the project root and is sourced by all scripts as `source ../vars.sh`. Two Containerfiles also live in the project root:
+Scripts are split into two directories. `vars.sh` lives in the project root and is sourced by all scripts using `BASH_SOURCE[0]`-relative paths, so scripts can be invoked from any directory — including the project root — without needing to `cd` in first. Two Containerfiles also live in the project root:
 
 - `Containerfile` — used during initial setup (`rails new`) to build the base Rails image
 - `Containerfile.dev` — used by developers who clone an existing project; self-contained, includes `bundle install` so the app's gems are baked into the image
 
-- `setup-scripts/` — one-time setup; run from within this directory
-- `dev-scripts/` — day-to-day development; run from within this directory
+- `setup-scripts/` — one-time setup
+- `dev-scripts/` — day-to-day development
 
 ## Key architectural decisions
 
@@ -44,7 +44,7 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
   - `DEV_CONTAINER_NAME` = `${RAILS_APP_NAME}_dev`
   - `RAILS_APP_IMAGE_NAME` = `${RAILS_APP_NAME}_image`
 
-- **`BIND_MOUNT` flag** in `vars.sh` controls which dev strategy is used. It defaults to `false` (exec mode: `podman exec` into the persistent dev container). `podman-move-project.sh` sets it to `true` in the destination copy of `vars.sh` so the exported app automatically uses bind-mount mode. In bind-mount mode every dev script uses `podman run --rm -v $(cd .. && pwd):/box/${RAILS_APP_NAME}:z` — a fresh container per command, no persistent dev container needed. The `:z` flag handles SELinux relabelling and is a no-op on non-SELinux hosts.
+- **`BIND_MOUNT` flag** in `vars.sh` controls which dev strategy is used. It defaults to `false` (exec mode: `podman exec` into the persistent dev container). `podman-move-project.sh` sets it to `true` in the destination copy of `vars.sh` so the exported app automatically uses bind-mount mode. In bind-mount mode every dev script uses `podman run --rm -v ${PROJECT_ROOT}:/box/${RAILS_APP_NAME}:z` — a fresh container per command, no persistent dev container needed. `PROJECT_ROOT` is derived from `vars.sh`'s own location via `BASH_SOURCE[0]`. The `:z` flag handles SELinux relabelling and is a no-op on non-SELinux hosts.
 
 - **`ensure_container_running()`** is a shared helper in `vars.sh`; it checks if a container exists and starts it if stopped, or exits with a clear error if it was never created. Used in exec mode only.
 
@@ -89,9 +89,10 @@ Scripts are split into two directories. `vars.sh` lives in the project root and 
 The user only has to:
 
 1. `chmod +x setup-scripts/*.sh dev-scripts/*.sh` (first time only)
-1. `cd setup-scripts && ./podman-new-rails-app.sh` — prompted for an app name, then ushered through the full setup automatically
+1. `./setup-scripts/podman-new-rails-app.sh` — prompted for an app name, then ushered through the full setup automatically
 1. Run `rails new` with desired flags inside the interactive container session, then `exit`
-1. `cd ../dev-scripts` and use `./podman-rails-server.sh`, `./podman-rails-console.sh`, `./podman-rails-test.sh` for day-to-day development
-1. Run `./podman-move-project.sh` (from `setup-scripts/`) to copy the project to a host directory for version control
+1. Use `./dev-scripts/podman-rails-server.sh`, `./dev-scripts/podman-rails-console.sh`, `./dev-scripts/podman-rails-test.sh` for day-to-day development
+1. Run `./setup-scripts/podman-move-project.sh` to copy the project to a host directory for version control
+1. Teammates clone the repo and run `./rails_pbr/setup-scripts/podman-setup-clone.sh` to get their environment up
 
 Please let me know if you have any questions! I look forward to what we can accomplish.

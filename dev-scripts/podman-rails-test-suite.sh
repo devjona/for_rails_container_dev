@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-source ../vars.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../vars.sh"
 
 # Optionally pass a specific test file or directory as an argument:
 #   ./podman-rails-test-suite.sh test/models/user_test.rb
